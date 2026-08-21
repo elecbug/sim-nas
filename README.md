@@ -1,6 +1,6 @@
-# sim-nas
+# SimNAS
 
-`sim-nas` is a minimal Docker-based SMB NAS for Linux hosts. It exports one host directory through Samba while keeping disk mounting and filesystem management on the host.
+**SimNAS** is a minimal Docker-based SMB NAS for Linux hosts. It exports one host directory through Samba while keeping disk mounting and filesystem management on the host.
 
 ## Architecture
 
