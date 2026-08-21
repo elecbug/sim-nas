@@ -1,4 +1,5 @@
 .env
+compose.yaml
 secrets/*
 !secrets/.gitkeep
 state/samba/*

@@ -1,7 +1,6 @@
 # sim-nas
 
-`sim-nas` is a minimal Docker-based SMB NAS for Linux hosts.
-It exports one host directory through Samba while keeping disk mounting and filesystem management on the host.
+`sim-nas` is a minimal Docker-based SMB NAS for Linux hosts. It exports one host directory through Samba while keeping disk mounting and filesystem management on the host.
 
 ## Architecture
 
@@ -41,13 +40,29 @@ sudo mount /dev/sdX1 /mnt/nas
 
 For persistent mounting, configure `/etc/fstab` using the filesystem UUID.
 
-2. Initialize sim-nas.
+2. Run the interactive initializer.
 
 ```bash
-cp .env.example .env
-# Edit .env if necessary.
 ./sim-nas init
 ```
+
+`init` asks for the SMB account, share name, storage path, UID/GID, port and mount-guard policy. Press Enter to keep each displayed default. It then writes both `.env` and `compose.yaml` and creates/updates the SMB password secret.
+
+Example:
+
+```text
+sim-nas initialization
+
+SMB user [nas]: research
+SMB share [storage]: data
+Host storage path [/mnt/nas]: /mnt/storage
+PUID [1000]:
+PGID [1000]:
+SMB port [445]:
+Require actual mount (true/false) [true]:
+```
+
+Re-running `./sim-nas init` uses the current `.env` values as defaults. If a password secret already exists, pressing Enter at the password prompt keeps the existing password.
 
 3. Verify the host and configuration.
 
@@ -70,12 +85,26 @@ cp .env.example .env
 Windows clients can connect to:
 
 ```text
+\\<server-ip>\<share>
+```
+
+With the defaults:
+
+```text
 \\<server-ip>\storage
 ```
 
-## Configuration
+## Generated configuration
 
-Default `.env` values:
+`./sim-nas init` generates these files:
+
+```text
+.env
+compose.yaml
+secrets/smb_password
+```
+
+Default values are:
 
 ```env
 SMB_USER=nas
@@ -87,22 +116,20 @@ SMB_PORT=445
 REQUIRE_MOUNT=true
 ```
 
-`HOST_STORAGE_PATH` is the only storage path exposed from the host. Inside the container it is always mounted at `/nas/storage`.
+`compose.yaml` is rendered with the selected values rather than relying on Compose-time variable substitution. This makes the effective Docker deployment easy to inspect. To change the configuration, re-run `./sim-nas init` instead of editing only one generated file.
+
+`HOST_STORAGE_PATH` is mounted inside the container at the fixed path `/nas/storage`.
 
 ### Mount guard
 
 By default, `sim-nas` refuses to start unless `HOST_STORAGE_PATH` is an actual mount point. This prevents an unmounted empty directory from being accidentally exposed when a disk failed to mount.
 
-To intentionally export a directory on the root filesystem:
-
-```env
-REQUIRE_MOUNT=false
-```
+To intentionally export a directory on the root filesystem, select `false` for the mount guard during `./sim-nas init`.
 
 ## Commands
 
 ```text
-./sim-nas init       Create the local secret and initial configuration
+./sim-nas init       Configure sim-nas and generate .env/compose.yaml
 ./sim-nas check      Validate Docker, storage, mount state, port, and Compose
 ./sim-nas start      Validate and start/rebuild the service
 ./sim-nas stop       Stop the service
@@ -129,7 +156,7 @@ Do not recursively change ownership on an existing populated filesystem unless t
 - SMB1 is disabled; Samba accepts SMB2/SMB3 only.
 - Guest access is disabled.
 - The SMB password is stored in `secrets/smb_password`, which is excluded from Git.
-- Only TCP port 445 is published.
+- Only the configured TCP SMB port is published to container port 445.
 - The container does not receive block devices and does not run privileged.
 
 Host firewall rules should restrict TCP/445 to trusted networks.
