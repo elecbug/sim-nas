@@ -196,10 +196,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    networks:
+      - sim-nas-net
 
 secrets:
   smb_password:
     file: ./secrets/smb_password
+
+networks:
+  sim-nas-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.230.5.0/24
 EOF_COMPOSE
 
 cat <<MSG
