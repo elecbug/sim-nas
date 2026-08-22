@@ -78,8 +78,29 @@ echo
 SMB_USER="$(prompt_value "SMB user" "$SMB_USER")"
 SMB_SHARE="$(prompt_value "SMB share" "$SMB_SHARE")"
 HOST_STORAGE_PATH="$(prompt_value "Host storage path" "$HOST_STORAGE_PATH")"
-PUID="$(prompt_value "PUID" "$PUID")"
-PGID="$(prompt_value "PGID" "$PGID")"
+
+# Prefer the host Unix account that has the same name as SMB_USER.
+# If it exists, use its UID/GID automatically; otherwise fall back to
+# manual UID/GID input.
+if id "$SMB_USER" >/dev/null 2>&1; then
+    PUID="$(id -u "$SMB_USER")"
+    PGID="$(id -g "$SMB_USER")"
+
+    echo
+    echo "Detected host Unix account for '$SMB_USER':"
+    echo "  UID : $PUID"
+    echo "  GID : $PGID"
+    echo
+else
+    echo
+    echo "Host Unix account '$SMB_USER' was not found."
+    echo "Enter UID and GID manually."
+    echo
+
+    PUID="$(prompt_value "PUID" "$PUID")"
+    PGID="$(prompt_value "PGID" "$PGID")"
+fi
+
 SMB_PORT="$(prompt_value "SMB port" "$SMB_PORT")"
 REQUIRE_MOUNT="$(prompt_value "Require actual mount (true/false)" "$REQUIRE_MOUNT")"
 REQUIRE_MOUNT="${REQUIRE_MOUNT,,}"
